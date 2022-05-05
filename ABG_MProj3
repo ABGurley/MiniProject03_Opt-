@@ -1,0 +1,46 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May  5 14:08:58 2022
+
+Crop Optimization problem
+
+total acres = 640
+growing season is April (04) through September (09)
+groundwater <= 18 #inches
+cost <= 100000
+
+must plant 50 acres of cotton
+
+crop            $ fixed      $/acre     H2O/acre      $ expected
+
+corn (CRN)      20000        25         28             750
+cotton (CO)     15000        20         20             500
+sorghum (SOR)   10000        18         18             400 
+
+@author: Ameri Gurley
+"""
+
+# objective function 1 - land
+CRNa + COa + SORa <= 640
+
+# objective function 2 - cost
+25*CRNa + 20*COa + 18*SORa + fixed <= 100000
+
+# where  
+fixed = 0
+if CRNa > 0:
+    fixed += 2000
+    
+if COa > 0:
+    fixed += 15000
+    
+if SOR > 0:
+    fixed += 10000
+    
+# we only need to add the base cost if were actually planting those seeds
+
+# objective function 3 - water use
+28*CRNa + 20*COa + 18*SORa - AveRain <= 18
+
+# need to get the average rainfall for April -> September
+# need to run two average rainfall scenerios: 25th and 75th  
