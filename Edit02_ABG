@@ -1,0 +1,74 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May  5 14:08:58 2022
+
+Crop Optimization problem
+
+total acres = 640
+growing season is April (04) through September (09)
+groundwater <= 18 #inches
+cost <= 100000
+
+must plant 50 acres of cotton
+
+crop            $ fixed      $/acre     H2O/acre      $ expected
+
+corn (CRN)      20000        25         28             750
+cotton (CO)     15000        20         20             500
+sorghum (SOR)   10000        18         18             400 
+
+@author: Ameri Gurley
+"""
+
+from pulp import *
+import numpy as np
+import os
+import pandas as pd
+
+# set working directory
+dir = "C:/Users/astuckle/Dropbox (Personal)/CE 5331 - Optimization/MiniProj_03" #work
+
+# need to get the average rainfall for April -> September
+a = pd.read_csv("Dumas_Rain_Temp_Data_2021.csv", skiprows = 10)
+rain = a.sort_values(by=["ppt (inches)"])
+rain25 = rain.quantile(.25)
+rain75 = rain.quantile(.75)
+
+# Create the problem variable 2
+prob = LpProblem("Farm Use", LpMinimize)
+
+# variables and their bounds 
+#     Must have 50 acres of corn 
+#     Only 640 acres available so let's top off there
+CRNa = LpVariable("Corn_Acreage", 50, 640)
+COa = LpVariable("Cotton_Acreage", 0, 640)
+SORa = LpVariable("Sorghum_Acreage", 0, 640)
+fixed = LpVariable("Base_Crop_Cost", 0, 45000) 
+AveRain = LpVariable("Average_Rainfall", 0, None)
+
+# objective function 1 - land
+prob += CRNa + COa + SORa <= 640
+
+# objective function 2 - cost
+prob += 25*CRNa + 20*COa + 18*SORa + fixed <= 100000
+
+# where  
+fixed = 0
+if CRNa > 0:
+    fixed += 20000
+    
+if COa > 0:
+    fixed += 15000
+    
+if SORa > 0:
+    fixed += 10000
+    
+# we only need to add the base cost if were actually planting those seeds
+
+# objective function 3 - water use
+28*CRNa + 20*COa + 18*SORa - AveRain <= 18
+
+# need to run two average rainfall scenerios: 25th and 75th  
+
+# expected revenue 
+profit = 750*CRNa + 500*COa + 400*SORa
