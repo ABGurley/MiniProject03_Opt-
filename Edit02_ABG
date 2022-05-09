@@ -25,14 +25,16 @@ import numpy as np
 import os
 import pandas as pd
 
+
 # set working directory
 dir = "C:/Users/astuckle/Dropbox (Personal)/CE 5331 - Optimization/MiniProj_03" #work
+os.chdir(dir)
 
-# need to get the average rainfall for April -> September
-a = pd.read_csv("Dumas_Rain_Temp_Data_2021.csv", skiprows = 10)
-rain = a.sort_values(by=["ppt (inches)"])
-rain25 = rain.quantile(.25)
-rain75 = rain.quantile(.75)
+# need to get the average rainfall for April -> September from last 10 years
+a = pd.read_csv("Dumas_Rain_Data_10yrs.csv")
+
+rain25 = a["Total"].quantile(.25) # dry year
+rain75 = a["Total"].quantile(.75) # wet year
 
 # Create the problem variable 2
 prob = LpProblem("Farm Use", LpMinimize)
@@ -40,35 +42,43 @@ prob = LpProblem("Farm Use", LpMinimize)
 # variables and their bounds 
 #     Must have 50 acres of corn 
 #     Only 640 acres available so let's top off there
-CRNa = LpVariable("Corn_Acreage", 50, 640)
-COa = LpVariable("Cotton_Acreage", 0, 640)
+CRNa = LpVariable("Corn_Acreage", 0, 640)
+COa = LpVariable("Cotton_Acreage", 50, 640)
 SORa = LpVariable("Sorghum_Acreage", 0, 640)
-fixed = LpVariable("Base_Crop_Cost", 0, 45000) 
+
+CRNu = LpVariable("Corn_YN", 0, 1, cat = "Integer")
+SORu = LpVariable("Sorghum_YN", 0, 1, cat = "Integer")
+
 AveRain = LpVariable("Average_Rainfall", 0, None)
 
-# objective function 1 - land
-prob += CRNa + COa + SORa <= 640
+# function cost
+prob += 25*CRNa + 20*COa + 18*SORa + 20000*CRNu + 10000*SORu <= 85000 # 100,000 - $15,000 base for the cotton
 
-# objective function 2 - cost
-prob += 25*CRNa + 20*COa + 18*SORa + fixed <= 100000
+# function land
+prob += CRNa + COa + SORa == 640
 
-# where  
-fixed = 0
-if CRNa > 0:
-    fixed += 20000
-    
-if COa > 0:
-    fixed += 15000
-    
-if SORa > 0:
-    fixed += 10000
-    
-# we only need to add the base cost if were actually planting those seeds
+# set binary conditions
+prob += CRNu <= CRNa
+prob += SORu <= SORa
 
-# objective function 3 - water use
-28*CRNa + 20*COa + 18*SORa - AveRain <= 18
+# average rain set to drought or wet conditions
+prob += AveRain == rain25 # rain75
 
-# need to run two average rainfall scenerios: 25th and 75th  
+#  function water
+prob += 28*CRNa + 20*COa + 18*SORa <= 18 - AveRain
+
+# the problem data is written to an *.lp file
+prob.writeLP("MiniProj3.lp")
+
+# problem is solved
+prob.solve()
+
+# print status
+print("Status:", LpStatus[prob.status])
+
+# final answer
+for v in prob.variables():
+    print(v.name, "=", v.varValue)
 
 # expected revenue 
 profit = 750*CRNa + 500*COa + 400*SORa
