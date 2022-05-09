@@ -37,7 +37,7 @@ rain25 = a["Total"].quantile(.25) # dry year
 rain75 = a["Total"].quantile(.75) # wet year
 
 # Create the problem variable 2
-prob = LpProblem("Farm Use", LpMinimize)
+prob = LpProblem("Farm_Use", LpMinimize)
 
 # variables and their bounds 
 #     Must have 50 acres of corn 
@@ -49,11 +49,6 @@ SORa = LpVariable("Sorghum_Acreage", 0, 640)
 CRNu = LpVariable("Corn_YN", 0, 1, cat = "Integer")
 SORu = LpVariable("Sorghum_YN", 0, 1, cat = "Integer")
 
-AveRain = LpVariable("Average_Rainfall", 0, None)
-
-# function cost
-prob += 25*CRNa + 20*COa + 18*SORa + 20000*CRNu + 10000*SORu <= 85000 # 100,000 - $15,000 base for the cotton
-
 # function land
 prob += CRNa + COa + SORa == 640
 
@@ -61,11 +56,11 @@ prob += CRNa + COa + SORa == 640
 prob += CRNu <= CRNa
 prob += SORu <= SORa
 
-# average rain set to drought or wet conditions
-prob += AveRain == rain25 # rain75
+# function cost
+prob += 25*CRNa + 20*COa + 18*SORa + 20000*CRNu + 10000*SORu <= 85000 # 100,000 - $15,000 base for the cotton
 
 #  function water
-prob += 28*CRNa + 20*COa + 18*SORa <= 18 - AveRain
+prob += 28*CRNa + 20*COa + 18*SORa - rain75*640 <= 18*640
 
 # the problem data is written to an *.lp file
 prob.writeLP("MiniProj3.lp")
@@ -81,4 +76,5 @@ for v in prob.variables():
     print(v.name, "=", v.varValue)
 
 # expected revenue 
-profit = 750*CRNa + 500*COa + 400*SORa
+profit = (750-25)*CRNa.varValue + (500-20)*COa.varValue + (400-18)*SORa.varValue - 20000*CRNu.varValue - 10000*SORu.varValue - 15000  #initial investment
+print("Profit =", "${:,.2f}".format(profit))
