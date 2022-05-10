@@ -90,66 +90,94 @@ print("Expected Profit =", "${:,.2f}".format(profit))
 # 2) Maximizing revenue based on rainfall and crops planted ===================
 
 # Variables for the Piece-wise
-CRNx1 = LpVariable("Corn_x1", 0, 22, cat = "Continuous")
-CRNx2 = LpVariable("Corn_x2", 0, 8, cat = "Continuous")
-CRNx3 = LpVariable("Corn_x3", 0, 10, cat = "Continuous")
+# codes based on water allocation Fig 1
+# Define variables
+x11 = LpVariable("corn-revenue1", 0, 22, cat="Continuous")
+x12 = LpVariable("corn-revenue2", 0, 30, cat="Continuous")
+x13 = LpVariable("corn-revenue3", 0, 40, cat="Continuous")
+alpha11 = LpVariable("alpha1-corn", 0, 1, cat="Integer")
+alpha12 = LpVariable("alpha2-corn", 0, 1, cat="Integer")
+alpha13 = LpVariable("alpha3-corn", 0, 1, cat="Integer")
 
-CRNa1 = LpVariable("Corn_alpha1", cat = "Binary")
-CRNa2 = LpVariable("Corn_alpha2", cat = "Binary")
-CRNa3 = LpVariable("Corn_alpha3", cat = "Binary")
+x21 = LpVariable("cotton-revenue1", 0, 22, cat="Continuous")
+x22 = LpVariable("cotton-revenue2", 0, 35, cat="Continuous")
+alpha21 = LpVariable("alpha1-cotton", 0, 1, cat="Integer")
+alpha22 = LpVariable("alpha2-cotton", 0, 1, cat="Integer")
 
-COx1 = LpVariable("Cotton_x1", 0, 22, cat = "Continuous")
-COx2 = LpVariable("Cotton_x2", 0, 13, cat = "Continuous")
+x31 = LpVariable("sorghum-revenue1", 0, 20, cat="Continuous")
+x32 = LpVariable("sorghum-revenue2", 0, 35, cat="Continuous")
+alpha31 = LpVariable("alpha1-sorghum", 0, 1, cat="Integer")
+alpha32 = LpVariable("alpha2-sorgum", 0, 1, cat="Integer")
 
-COa1 = LpVariable("Cotton_alpha1", cat = "Binary")
-COa2 = LpVariable("Cotton_alpha2", cat = "Binary")
+# Question 2 codes from here
+# Define the LP Problem and add constraints
+prob2 = LpProblem(name='piecewise-revenue', sense=LpMaximize)
+prob2 += (0*alpha11 + 100/22*x11 + 100*alpha12 + 700/8*x12 + 800*alpha13 + 100/10*x13) + (0*alpha21 + 550/22*x21 + 550*alpha22 + 5/13*x22) + (0*alpha31 + 450/20*x31 + 450*alpha32 + 5/15*x32)# Objective function
 
-SORx1 = LpVariable("Sorghum_x1", 0, 20, cat = "Continuous")
-SORx2 = LpVariable("Sorghum_x2", 0, 15, cat = "Continuous")
+prob2 += alpha11 + alpha12 +alpha13 <= 1 # to define corn binary variables
+prob2 += alpha21 + alpha22 <= 1 # to define cotton binary variables
+prob2 += alpha31 + alpha32 <= 1 # to define sorghum binary variables
 
-SORa1 = LpVariable("Sorghum_alhpa1", cat = "Binary")
-SORa2 = LpVariable("Sorghum_alhpa2", cat = "Binary")
+prob2 += 28*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + 20*(x21 + 0*alpha21 + x22 + 22*alpha22) + 18*(x31 + 0*alpha31 + x32 + 20*alpha32) - rain75*((x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32)) <= 18*((x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32)) # water allocation constraints ???
+prob2 += (x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32) <= 640
 
-# Create the problem for part 2
-prob2 = LpProblem("Water_Profit_Analysis", LpMaximize)
+prob2 += (20000 + 25*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13)) + (15000 + 20*(x21 + 0*alpha21 + x22 + 22*alpha22)) + (10000 + 18*(x31 + 0*alpha31 + x32 + 20*alpha32)) <= 100000
 
-# Objective Function - profit
-prob2 += (750-25)*(CRNx1+ CRNx2 + CRNx3) + (500-20)*(COx1 + COx2) + (400-18)*(SORx1 + SORx2) 
+prob2 += x11 - 22*alpha11 <= 0
+prob2 += x12 - 8*alpha12 <= 0
+prob2 += x13 - 10*alpha13 <= 0 
+prob2 += x21 - 22*alpha21 <= 0
+prob2 += x22 - 13*alpha22 <= 0
+prob2 += x31 - 20*alpha31 <= 0
+prob2 += x32 - 15*alpha32 <= 0
 
-# Water Allocation
-prob2 += 28*(CRNx1 + CRNx2 + CRNx3)  + 20*(COx1 + COx2) + 18*(SORx1 + SORx2) - rain75*640 <= 18*640
+# The problem data is written to an .lp file
+prob2.writeLP("MiniProject3_75.lp")
 
-# Cost/Water functions
-prob2 += (25)*(CRNx1+ CRNx2 + CRNx3) + (20)*(COx1 + COx2) + (18)*(SORx1 + SORx2) <= 55000
- 
-prob2 += 22*CRNx1 + 100*CRNa1 + 30*CRNx2 + 87.5*CRNa2 + 40*CRNx3 + 10*CRNa3 # corn
-prob2 += 22*COx1 + 550*COa1 + 35*COx2 + 0.3846*COa2 # cotton
-prob2 += 22*SORx1 + 450*SORa1 + 35*SORx2 + 0.3333*SORa2 # sorghum
-
-prob2 += CRNa1 + CRNa2 + CRNa3 <= 1
-prob2 += COa1 + COa2 <= 1
-prob2 += SORa1 + SORa2 <= 1
-
-prob2 += CRNx1 - 22*CRNa1 <= 0
-prob2 += CRNx2 - 8*CRNa2 <= 0
-prob2 += CRNx3 - 10*CRNa3 <= 0
-
-prob2 += COx1 - 22*COa1 <= 0
-prob2 += COx2 - 13*COa2 <= 0
-
-prob2 += SORx1 - 20*SORa1 <= 0
-prob2 += SORx2 - 15*SORa2 <= 0
-
-# the problem data is written to an *.lp file
-prob2.writeLP("MiniProj3_pt2.lp")
-
-# problem is solved
+# The problem is solved using PuLP's default Solver
 prob2.solve()
 
-# print status
+# The status of the solution is printed to the screen
 print("Status:", LpStatus[prob2.status])
 
-# final answer
-print("Answer to water and profit:")
+# Each of the variables is printed with its optimum value
 for v in prob2.variables():
+    print(v.name, "=", v.varValue)
+
+
+
+# 25th drought
+# 640 acres of land will be all used
+# Define the LP Problem and add constraints
+prob3 = LpProblem(name='piecewise-revenue', sense=LpMaximize)
+prob3 += (0*alpha11 + 100/22*x11 + 100*alpha12 + 700/8*x12 + 800*alpha13 + 100/10*x13) + (0*alpha21 + 550/22*x21 + 550*alpha22 + 5/13*x22) + (0*alpha31 + 450/20*x31 + 450*alpha32 + 5/15*x32)# Objective function
+
+prob3 += alpha11 + alpha12 +alpha13 <= 1 # to define corn binary variables
+prob3 += alpha21 + alpha22 <= 1 # to define cotton binary variables
+prob3 += alpha31 + alpha32 <= 1 # to define sorghum binary variables
+
+prob3 += 28*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + 20*(x21 + 0*alpha21 + x22 + 22*alpha22) + 18*(x31 + 0*alpha31 + x32 + 20*alpha32) - rain25*((x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32)) <= 18*((x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32)) # water allocation constraints ???
+prob3 += (x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32) <= 640
+
+prob3 += (20000 + 25*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13)) + (15000 + 20*(x21 + 0*alpha21 + x22 + 22*alpha22)) + (10000 + 18*(x31 + 0*alpha31 + x32 + 20*alpha32)) <= 100000
+
+prob3 += x11 - 22*alpha11 <= 0
+prob3 += x12 - 8*alpha12 <= 0
+prob3 += x13 - 10*alpha13 <= 0 
+prob3 += x21 - 22*alpha21 <= 0
+prob3 += x22 - 13*alpha22 <= 0
+prob3 += x31 - 20*alpha31 <= 0
+prob3 += x32 - 15*alpha32 <= 0
+
+# The problem data is written to an .lp file
+prob3.writeLP("MiniProject3_25.lp")
+
+# The problem is solved using PuLP's default Solver
+prob3.solve()
+
+# The status of the solution is printed to the screen
+print("Status:", LpStatus[prob3.status])
+
+# Each of the variables is printed with its optimum value
+for v in prob3.variables():
     print(v.name, "=", v.varValue)
