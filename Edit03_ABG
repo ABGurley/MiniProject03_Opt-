@@ -111,13 +111,17 @@ SORa1 = LpVariable("Sorghum_alhpa1", cat = "Binary")
 SORa2 = LpVariable("Sorghum_alhpa2", cat = "Binary")
 
 # Create the problem for part 2
-prob2 = LpProblem("Water_Profit_Analysis", LpMinimize)
+prob2 = LpProblem("Water_Profit_Analysis", LpMaximize)
 
-# Objective Function - water allocation
-#prob2 += 28*(CRNx1*CRNa1 + CRNx2*CRNa2 + CRNx3*CRN3)  + 20*(COx1*COa1 + COx2*COa2) + 18*(SORx1*SORa1 + SORx2*SORa1) - rain75*640 == 18*640
-prob2 += 28*(CRNx1 + CRNx2 + CRNx3)  + 20*(COx1 + COx2) + 18*(SORx1 + SORx2) - rain75*640 == 18*640
+# Objective Function - profit
+prob2 += (750-25)*(CRNx1+ CRNx2 + CRNx3) + (500-20)*(COx1 + COx2) + (400-18)*(SORx1 + SORx2) 
+
+# Water Allocation
+prob2 += 28*(CRNx1 + CRNx2 + CRNx3)  + 20*(COx1 + COx2) + 18*(SORx1 + SORx2) - rain75*640 <= 18*640
 
 # Cost/Water functions
+prob2 += (25)*(CRNx1+ CRNx2 + CRNx3) + (20)*(COx1 + COx2) + (18)*(SORx1 + SORx2) <= 55000
+ 
 prob2 += 22*CRNx1 + 100*CRNa1 + 30*CRNx2 + 87.5*CRNa2 + 40*CRNx3 + 10*CRNa3 # corn
 prob2 += 22*COx1 + 550*COa1 + 35*COx2 + 0.3846*COa2 # cotton
 prob2 += 22*SORx1 + 450*SORa1 + 35*SORx2 + 0.3333*SORa2 # sorghum
